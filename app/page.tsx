@@ -1,101 +1,170 @@
-import Image from "next/image";
+"use client";
+import { useState } from "react";
+import { faXmark } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+
+type Data = {
+    type: string;
+    media: Media[];
+};
+
+type Media = {
+    url: string;
+    bitrate?: number;
+    content_type?: string;
+};
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    const [isError, setIsError] = useState(false);
+    const [data, setData] = useState<Data[] | null>(null);
+    const [media, setMedia] = useState<string[] | null | undefined>(null);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
-  );
+    const submit = (event: React.FormEvent): void => {
+        event.preventDefault();
+        const urlInput = (event.target as HTMLFormElement)
+            .elements[0] as HTMLInputElement;
+        const url = urlInput.value;
+        const regex =
+            /https?:\/\/(www\.)?(twitter|x)\.com\/[A-Za-z0-9_]+\/status\/[0-9]+/;
+
+        if (regex.test(url)) {
+            fetch(`/api/x?url=${url}`)
+                .then((res) => res.json())
+                .then((data) => {
+                    setData(data.data);
+                    setMedia(
+                        data.data.map((d: Data) => {
+                            return d.media[0].url;
+                        }),
+                    );
+                })
+                .catch((err) => {
+                    console.error("Error:", err);
+                    setIsError(true);
+                });
+        } else {
+            setIsError(true);
+        }
+    };
+    const onChangeResolution = (
+        e: React.ChangeEvent<HTMLSelectElement>,
+    ): void => {
+        const selectedMedia = media?.map((d: string, n) => {
+            if (n === Number(e.target.id)) {
+                return e.target.value;
+            } else {
+                return d;
+            }
+        });
+        setMedia(selectedMedia);
+    };
+    return (
+            <div className="md:p-4 px-1 py-4 md:p-8">
+                <p className="text-center text-2xl font-medium">KrepDL</p>
+                <p className="text-base text-center">
+                    Doownload any media from X (Twitter) for free with KrepDL!
+                </p>
+                <div className="flex flex-col gap-y-3 items-center justify-center mt-4">
+                    <div
+                        className="md:w-2/4 w-3/4 bg-slate-300 shadow-xl md:m-4 p-4 rounded-lg mb-3"
+                        data-aos="fade-up"
+                        data-aos-delay="100"
+                    >
+                        <h2 className="text-lg font-semibold text-center">
+                            Download Now!
+                        </h2>
+                        {isError && (
+                            <div
+                                className="bg-red-500 p-2 rounded-md flex relative"
+                                data-aos="fade-left"
+                            >
+                                <p className="text-red-200 flex-1">
+                                    Please input the correct URL.
+                                </p>
+                                <button onClick={() => setIsError(!isError)}>
+                                    <FontAwesomeIcon
+                                        icon={faXmark}
+                                        className="mt-1 text-white"
+                                    />
+                                </button>
+                            </div>
+                        )}
+                        <form
+                            className="flex flex-col items-center gap-3 justify-center mt-8"
+                            onSubmit={submit}
+                            data-aos="fade-right"
+                            data-aos-duration="500"
+                        >
+                            <input
+                                type="text"
+                                placeholder="Input url"
+                                className="md:w-4/6 p-1 ring-0 focus:outline-none border-b-2 border-black bg-slate-300"
+                            />
+                            <button className="p-2 bg-indigo-500 text-gray-300 rounded-lg dropshadow-lg">
+                                Download
+                            </button>
+                        </form>
+                    </div>
+                    {data?.map((d: Data, i) => (
+                        <div
+                            key={i}
+                            className="md:w-2/4 w-3/4 bg-slate-300 shadow-xl md:m-4 p-4 rounded-lg"
+                            data-aos="fade-up"
+                            data-aos-delay="200"
+                        >
+                            <h2 className="text-lg font-semibold text-center">
+                                {d.type === "photo" ? "Photo" : "Video"}
+                            </h2>
+                            <div className="flex flex-col items-center gap-3 justify-center mt-2 md:px-6">
+                                {d.type === "photo" ? (
+                                    <>
+                                        <img
+                                            src={d.media[0].url}
+                                            alt={`${i}`}
+                                            className="rounded-lg"
+                                        />
+                                        <a href={d.media[0].url} download>
+                                            <button className="p-2 bg-indigo-500 text-gray-300 rounded-lg dropshadow-lg">
+                                                Download Media
+                                            </button>
+                                        </a>
+                                    </>
+                                ) : (
+                                    <>
+                                        <video
+                                            controls
+                                            src={media?.[i]}
+                                            className="rounded-lg md:max-w-[320px]"
+                                        />
+                                        <select
+                                            onChange={onChangeResolution}
+                                            className="p-2 bg-white rounded-md outline-none"
+                                        >
+                                            {d.media.map((m: Media, ii) => (
+                                                <option
+                                                    key={ii}
+                                                    id={String(i)}
+                                                    value={m.url}
+                                                >
+                                                    {(
+                                                        (m.bitrate ?? 0) /
+                                                        (1024 * 1024)
+                                                    ).toFixed(2)}{" "}
+                                                    Mbps - {m.content_type}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <a href={media?.[i]} download>
+                                            <button className="p-2 bg-indigo-500 text-gray-300 rounded-lg dropshadow-lg">
+                                                Download Media
+                                            </button>
+                                        </a>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+    );
 }
